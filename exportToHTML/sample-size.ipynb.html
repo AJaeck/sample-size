@@ -1,0 +1,171 @@
+<html>
+<head>
+<title>sample-size.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080; font-style: italic;}
+.s1 { color: #000000;}
+.s2 { color: #000080; font-weight: bold;}
+.s3 { color: #008000; font-weight: bold;}
+.s4 { color: #0000ff;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+sample-size.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% md 
+</span># Sample Size Calculation 
+## Introduction 
+- The study measures NfL levels at multiple time points in Patients with Progressive Supranuclear Palsy (PSP) to investigate the effects of GPB on these levels 
+- The primary analysis compares the change in NfL levels between visit 1 and visit 5 in both treatment groups, using a difference of differences approach 
+- This method allows for the comparison of the relative changes in NfL levels between visit 5 and visit 1 in the two treatment groups, while accounting for individual biomarker trajectories of study participants 
+ 
+### Goal 
+- To detect the anticipated difference in NfL levels with a power of 80% at a 5% significance level, the sample size of patients per group needs to be estimated. 
+- The calculation is based on an age-adjusted mean and standard deviation derived from a known PSP patient cohort. 
+ 
+### References 
+- Lund and London Cohort Reference: &lt;a href=&quot;https://pubmed.ncbi.nlm.nih.gov/34099648/&quot;&gt;A multicentre validation study of the diagnostic value of plasma neurofilament light (Astton et al., 2021)&lt;/a&gt; 
+- Normal NfL: &lt;a href=&quot;https://www.nature.com/articles/s41467-020-14612-6&quot;&gt;Serum neurofilament light levels in normal aging and their association with morphologic brain changes (Khalil et al., 2020)&lt;/a&gt; 
+ 
+&lt;img src=&quot;../figures/Percentile_ranges_of_sNfL.png&quot; style=&quot;width:300px; float: right; margin: 0 40px 40px 40px;&quot;&gt;&lt;/img&gt; 
+ 
+&lt;h3 style=&quot;color: red;&quot;&gt;Problem&lt;/h3&gt; 
+&lt;ul&gt; 
+&lt;li&gt;Initially, our aim was to adjust the mean NfL levels to those observed in a normal aging cohort (Image left).&lt;/li&gt; 
+&lt;li&gt;However, as NfL was measured in serum and not plasma, we instead adjusted the mean to the plasma levels of the control group from Ashton et al. (see references).&lt;/li&gt; 
+&lt;/ul&gt; 
+ 
+### Data Sources 
+- &lt;a href=&quot;https://static-content.springer.com/esm/art%3A10.1038%2Fs41467-021-23620-z/MediaObjects/41467_2021_23620_MOESM3_ESM.xlsx&quot;&gt;Raw Data Lund and London Cohort&lt;/a&gt; 
+ 
+ 
+<span class="s0">#%% 
+</span><span class="s2">import </span>pandas <span class="s2">as </span>pd
+<span class="s2">import </span>seaborn <span class="s2">as </span>sns
+<span class="s0">#%% md 
+</span>## Load dataset 
+- Read excel data table and transform to pandas dataframe 
+<span class="s0">#%% 
+</span>df = pd.read_excel(<span class="s3">&quot;../data/raw_data_nfl_psp.xlsx&quot;</span>)
+print(df)
+<span class="s0">#%% md 
+</span>## View Mean and SD 
+- Calculate SD and Mean values for PSP and Control data in both Lund and London cohort 
+- Print output 
+<span class="s0">#%% 
+</span>mean = df.groupby([<span class="s3">'Group'</span>, <span class="s3">&quot;Cohort&quot;</span>]).mean()
+sd = df.groupby([<span class="s3">'Group'</span>, <span class="s3">&quot;Cohort&quot;</span>]).std()
+print(<span class="s3">&quot;Mean Values&quot;</span>)
+print(mean)
+print(<span class="s3">&quot;&quot;</span>)
+print(<span class="s3">&quot;SD Values&quot;</span>)
+print(sd)
+<span class="s0">#%% md 
+</span>## Plot original dataset 
+ 
+- The boxplot shows the quartiles of the dataset while the whiskers extend to show the rest of the distribution, except for points that are determined to be “outliers” using a method that is a function of the interquartile range. 
+- Data in figure presented as in original publication (see references) 
+<span class="s0">#%% 
+</span><span class="s2">def </span>df_boxplot():
+    sns.set_theme(style=<span class="s3">&quot;whitegrid&quot;</span>, palette=[<span class="s3">'#83c5be'</span>,<span class="s3">'#fb8b24'</span>])
+    sns.boxplot(
+        x=<span class="s3">&quot;Cohort&quot;</span>, y=<span class="s3">&quot;Plasma_NfL&quot;</span>, hue=<span class="s3">&quot;Group&quot;</span>, hue_order=[<span class="s3">'Control'</span>, <span class="s3">&quot;PSP&quot;</span>], data=df, linewidth=<span class="s4">1.0</span>, width=<span class="s4">.5</span>,
+        flierprops={<span class="s3">&quot;marker&quot;</span>: <span class="s3">&quot;o&quot;</span>, <span class="s3">&quot;markersize&quot;</span>: <span class="s4">2</span>},
+    ).set(
+    ylabel=<span class="s3">'Plasma NfL (pg/nl)'</span>
+)
+
+df_boxplot()
+<span class="s0">#%% md 
+</span>## Calculate Mean and SD for PSP pnly 
+ 
+### Filter Datafram 
+<span class="s0">#%% 
+</span>df_psp = df[df[<span class="s3">&quot;Group&quot;</span>] == <span class="s3">&quot;PSP&quot;</span>]
+print(df_psp)
+<span class="s0">#%% md 
+</span>### Calculate Values 
+<span class="s0">#%% 
+</span>mean_psp = df_psp.groupby(<span class="s3">&quot;Cohort&quot;</span>).mean()
+sd_psp = df_psp.groupby(<span class="s3">&quot;Cohort&quot;</span>).std()
+print(<span class="s3">&quot;Mean PSP&quot;</span>)
+print(mean_psp)
+print(<span class="s3">&quot;&quot;</span>)
+print(<span class="s3">&quot;SD PSP&quot;</span>)
+print(sd_psp)
+<span class="s0">#%% md 
+</span>## Redfine data plot 
+ 
+1. NfL plasma levels in PSP patients in Lund and London cohort represented as swarmplot errorabrs (SD) 
+2. Black dot represents mean value 
+<span class="s0">#%% 
+</span><span class="s2">from </span>matplotlib <span class="s2">import </span>pyplot <span class="s2">as </span>plt
+
+<span class="s2">def </span>df_swarmplot():
+
+    plt.errorbar(range(len(mean_psp)), mean_psp, yerr=sd_psp, capsize=<span class="s4">5</span>, color=<span class="s3">'black'</span>, alpha=<span class="s4">1</span>,
+             linewidth=<span class="s4">2</span>, linestyle=<span class="s3">''</span>, marker=<span class="s3">'o'</span>)
+
+    sns.swarmplot(
+        x=<span class="s3">&quot;Cohort&quot;</span>, y=<span class="s3">&quot;Plasma_NfL&quot;</span>, data=df_psp, palette=<span class="s3">&quot;pastel&quot;</span>, zorder=<span class="s4">1</span>, alpha=<span class="s4">0.8</span>
+    ).set(
+    ylabel=<span class="s3">'Plasma NfL (pg/nl)'</span>
+)
+
+df_swarmplot()
+<span class="s0">#%% md 
+</span>## Results 
+ 
+### Mean and SD 
+&lt;table&gt; 
+  &lt;tr&gt; 
+    &lt;th&gt;Cohort&lt;/th&gt; 
+    &lt;th&gt;PSP Mean&lt;/th&gt; 
+    &lt;th&gt;Control Mean&lt;/th&gt; 
+    &lt;th&gt;Adjusted Mean&lt;/th&gt; 
+    &lt;th&gt;PSP SD&lt;/th&gt; 
+  &lt;/tr&gt; 
+  &lt;tr&gt; 
+    &lt;td&gt;London&lt;/td&gt; 
+    &lt;td&gt;72.72&lt;/td&gt; 
+    &lt;td&gt;31.23&lt;/td&gt; 
+    &lt;td&gt;41.49&lt;/td&gt; 
+    &lt;td&gt;38.53&lt;/td&gt; 
+  &lt;/tr&gt; 
+  &lt;tr&gt; 
+    &lt;td&gt;Lund&lt;/td&gt; 
+    &lt;td&gt;83.59&lt;/td&gt; 
+    &lt;td&gt;22.52&lt;/td&gt; 
+    &lt;td&gt;61.07&lt;/td&gt; 
+    &lt;td&gt;41.46&lt;/td&gt; 
+  &lt;/tr&gt; 
+&lt;/table&gt; 
+&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; Adjusted mean refers to the difference between the mean NfL levels observed in the PSP patient cohort and those observed in the healthy individual cohort.&lt;/p&gt; 
+ 
+### Sample Size calculations 
+Detect the anticipated 50% difference in  NfL plasma levels with a power of 80% at a 5% significance level for: 
+#### PSP Lund 
+##### Adjusted 
+ - Sample size calculation requires 29 patients per group 
+ - Considering a potential dropout rate of 20%, a total of 36 patients per arm is required, resulting in a total sample size of 72 patients. 
+##### Not adjusted 
+ - Sample size calculation requires 15 patients per group 
+ - Considering a potential dropout rate of 20%, a total of 19 patients per arm is required, resulting in a total sample size of 38 patients. 
+#### PSP London 
+##### Adjusted 
+ - Sample size calculation requires 54 patients per group 
+ - Considering a potential dropout rate of 20%, a total of 67 patients per arm is required, resulting in a total sample size of 66 patients. 
+##### Not adjusted 
+ - Sample size calculation requires 18 patients per group 
+ - Considering a potential dropout rate of 20%, a total of 22 patients per arm is required, resulting in a total sample size of 134 patients. 
+<span class="s0">#%% md 
+</span>## Conclusion 
+- As no age-adjusted data was available for plasma NfL, we adjusted the mean to the control group of each cohort. 
+- If an adjusted model is to be used, we would recommend using the PSP Lund Cohort. 
+- If a non-adjusted model is to be used, we recommend calculating the sample size by anticipating a 60% difference in NfL plasma levels, given the low sample sizes.</pre>
+</body>
+</html>
